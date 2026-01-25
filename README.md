@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="public/img/logo-empresa.png" width="500" alt="Logo Empresa Levay">
+</p>
+
+# 📦 Sistema de Gestión de Inventario - Empresa Levay
+... (aquí sigue el resto del texto que ya pegaste)
+
 # 📦 Empresa Levay - Sistema de Gestión de Inventarios
 
 Sistema integral desarrollado para la materia de **Programación IV**. Utiliza una arquitectura moderna de **Single Page Application (SPA)**.
