@@ -3,7 +3,6 @@
 </p>
 
 # 📦 Sistema de Gestión de Inventario - Empresa Levay
-... (aquí sigue el resto del texto que ya pegaste)
 
 # 📦 Empresa Levay - Sistema de Gestión de Inventarios
 
