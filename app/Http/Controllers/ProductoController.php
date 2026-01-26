@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Proveedor;
+use App\Models\Auditoria;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -30,7 +31,10 @@ class ProductoController extends Controller
             'id_proveedor' => 'required|exists:proveedors,id',
         ]);
 
-        Producto::create($validated);
+        $producto = Producto::create($validated);
+
+
+        Auditoria::registrar('Creación', 'Productos', 'Se registró el producto: ' . $producto->nombre);
 
         return redirect()->back();
     }
@@ -48,12 +52,19 @@ class ProductoController extends Controller
 
         $producto->update($validated);
 
+
+        Auditoria::registrar('Edición', 'Productos', 'Se actualizó el producto: ' . $producto->nombre);
+
         return redirect()->back();
     }
 
     public function destroy(Producto $producto)
     {
+        $nombreEliminado = $producto->nombre;
         $producto->delete();
+
+
+        Auditoria::registrar('Eliminación', 'Productos', 'Se eliminó el producto: ' . $nombreEliminado);
 
         return redirect()->back();
     }

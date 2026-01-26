@@ -5,6 +5,10 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MovimientoController;
+use App\Http\Controllers\AuditoriaController; // Importado
+use App\Models\Producto;   // Importado para el Dashboard
+use App\Models\Proveedor;  // Importado para el Dashboard
+use App\Models\Movimiento; // Importado para el Dashboard
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -19,9 +23,16 @@ Route::get('/', function () {
     ]);
 });
 
-// Ruta del Dashboard
+// Ruta del Dashboard con Estadísticas
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    return Inertia::render('Dashboard', [
+        'stats' => [
+            'total_productos' => Producto::count(),
+            'total_proveedores' => Proveedor::count(),
+            'stock_bajo' => Producto::where('stock', '<', 5)->count(),
+            'ultimos_movimientos' => Movimiento::with('producto')->latest()->take(5)->get()
+        ]
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // --- Rutas de Gestión de Inventario (Recursos) ---
@@ -30,6 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('proveedores', ProveedorController::class);
     Route::resource('productos', ProductoController::class);
     Route::resource('movimientos', MovimientoController::class);
+
+    // Ruta de Auditoría dentro del grupo autenticado
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
 });
 
 // Rutas de Perfil de Usuario
