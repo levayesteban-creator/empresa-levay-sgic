@@ -5,67 +5,89 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Proveedor;
-use App\Models\Auditoria;
+use App\Models\Auditoria; // Importamos el modelo de Auditoría
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ProductoController extends Controller
 {
+    /**
+     * Mostrar la lista de productos
+     */
     public function index()
     {
+        $productos = Producto::with(['categoria', 'proveedor'])->get();
         return Inertia::render('Productos/Index', [
-            'productos' => Producto::with(['categoria', 'proveedor'])->get(),
-            'categorias' => Categoria::all(),
-            'proveedores' => Proveedor::all()
+            'productos' => $productos
         ]);
     }
 
+    /**
+     * Guardar un nuevo producto
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre'       => 'required|string|max:255',
-            'descripcion'  => 'nullable|string',
-            'precio'       => 'required|numeric|min:0',
-            'stock'        => 'required|integer|min:0',
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric',
+            'stock' => 'required|integer',
             'id_categoria' => 'required|exists:categorias,id',
-            'id_proveedor' => 'required|exists:proveedors,id',
+            'id_proveedor' => 'required|exists:proveedores,id',
         ]);
 
-        $producto = Producto::create($validated);
+        Producto::create($validated);
 
+        // --- REGISTRO DE AUDITORÍA ---
+        Auditoria::registrar(
+            'Creación',
+            'Productos',
+            'Se añadió el producto: ' . $request->nombre . ' con un stock inicial de ' . $request->stock
+        );
 
-        Auditoria::registrar('Creación', 'Productos', 'Se registró el producto: ' . $producto->nombre);
-
-        return redirect()->back();
+        return redirect()->route('productos.index')->with('message', 'Producto creado con éxito');
     }
 
+    /**
+     * Actualizar un producto existente
+     */
     public function update(Request $request, Producto $producto)
     {
         $validated = $request->validate([
-            'nombre'       => 'required|string|max:255',
-            'descripcion'  => 'nullable|string',
-            'precio'       => 'required|numeric|min:0',
-            'stock'        => 'required|integer|min:0',
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric',
+            'stock' => 'required|integer',
             'id_categoria' => 'required|exists:categorias,id',
-            'id_proveedor' => 'required|exists:proveedors,id',
+            'id_proveedor' => 'required|exists:proveedores,id',
         ]);
 
         $producto->update($validated);
 
+        // --- REGISTRO DE AUDITORÍA ---
+        Auditoria::registrar(
+            'Edición',
+            'Productos',
+            'Se actualizó la información de: ' . $producto->nombre
+        );
 
-        Auditoria::registrar('Edición', 'Productos', 'Se actualizó el producto: ' . $producto->nombre);
-
-        return redirect()->back();
+        return redirect()->route('productos.index')->with('message', 'Producto actualizado');
     }
 
+    /**
+     * Eliminar un producto
+     */
     public function destroy(Producto $producto)
     {
-        $nombreEliminado = $producto->nombre;
+        $nombreEliminado = $producto->nombre; // Guardamos el nombre antes de borrar
+
         $producto->delete();
 
+        // --- REGISTRO DE AUDITORÍA ---
+        Auditoria::registrar(
+            'Eliminación',
+            'Productos',
+            'Se eliminó permanentemente el producto: ' . $nombreEliminado
+        );
 
-        Auditoria::registrar('Eliminación', 'Productos', 'Se eliminó el producto: ' . $nombreEliminado);
-
-        return redirect()->back();
+        return redirect()->route('productos.index')->with('message', 'Producto eliminado');
     }
 }
