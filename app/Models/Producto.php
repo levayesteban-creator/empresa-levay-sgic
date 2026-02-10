@@ -9,6 +9,8 @@ class Producto extends Model
 {
     use HasFactory;
 
+    protected $table = 'productos';
+
     protected $fillable = [
         'nombre',
         'descripcion',
@@ -16,6 +18,11 @@ class Producto extends Model
         'stock',
         'id_categoria',
         'id_proveedor'
+    ];
+
+    protected $casts = [
+        'precio' => 'float',
+        'stock' => 'integer',
     ];
 
     public function categoria()

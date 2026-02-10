@@ -9,6 +9,9 @@ class Proveedor extends Model
 {
     use HasFactory;
 
+
+    protected $table = 'proveedores';
+
     protected $fillable = [
         'nombre',
         'contacto_persona',
@@ -16,4 +19,10 @@ class Proveedor extends Model
         'email',
         'direccion'
     ];
+
+
+    public function productos()
+    {
+        return $this->hasMany(Producto::class, 'id_proveedor');
+    }
 }

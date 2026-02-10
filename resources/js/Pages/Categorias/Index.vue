@@ -1,45 +1,72 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-const props = defineProps({ categorias: Array });
+const props = defineProps({
+    categorias: Array
+});
+
 const editMode = ref(false);
 const editId = ref(null);
 
 const form = useForm({
     nombre: '',
+    descripcion: '',
 });
 
-// Función para enviar (Crear o Editar)
 const submit = () => {
     if (editMode.value) {
-        form.put(route('categorias.update', editId.value), {
-            onSuccess: () => resetForm(),
+        // CORRECCIÓN: Usamos router.post con _method: 'put' para evitar el error 405
+        router.post(`/categorias/${editId.value}`, {
+            _method: 'put',
+            nombre: form.nombre,
+            descripcion: form.descripcion,
+        }, {
+            onSuccess: () => {
+                resetForm();
+                alert('¡Categoría actualizada!');
+            },
+            onError: (err) => console.error(err),
+            preserveScroll: true
         });
     } else {
         form.post(route('categorias.store'), {
-            onSuccess: () => resetForm(),
+            onSuccess: () => {
+                resetForm();
+                alert('¡Categoría creada!');
+            },
+            onError: (err) => console.error(err)
         });
     }
 };
 
-// Preparar para editar
 const editCategoria = (cat) => {
     editMode.value = true;
     editId.value = cat.id;
     form.nombre = cat.nombre;
+    form.descripcion = cat.descripcion || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Eliminar
 const deleteCategoria = (id) => {
+    if (!id) return;
+
     if (confirm('¿Estás seguro de eliminar esta categoría?')) {
-        form.delete(route('categorias.destroy', id));
+        // CORRECCIÓN: Usamos router.post con _method: 'delete' para mayor compatibilidad
+        router.post(`/categorias/${id}`, {
+            _method: 'delete',
+        }, {
+            onSuccess: () => alert('Categoría eliminada con éxito'),
+            onError: (err) => console.error(err),
+            preserveScroll: true
+        });
     }
 };
 
 const resetForm = () => {
     form.reset();
+    form.clearErrors();
     editMode.value = false;
     editId.value = null;
 };
@@ -48,42 +75,57 @@ const resetForm = () => {
 <template>
     <Head title="Categorías" />
     <AuthenticatedLayout>
-        <div class="py-12 max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-6 shadow-sm sm:rounded-lg">
-                <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Gestión de Categorías - Empresa Levay</h2>
+        <template #header>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Categorías</h2>
+        </template>
 
-                <form @submit.prevent="submit" class="mb-8 p-4 bg-gray-50 rounded-lg border flex items-end gap-4">
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700">Nombre de la Categoría</label>
-                        <input v-model="form.nombre" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
-                    <button type="submit" :disabled="form.processing"
-                        :class="editMode ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'"
-                        class="text-white px-6 py-2 rounded-md transition duration-200">
-                        {{ editMode ? 'Actualizar' : 'Guardar' }}
-                    </button>
-                    <button v-if="editMode" @click="resetForm" type="button" class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600">
-                        Cancelar
-                    </button>
-                </form>
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-800 text-white">
-                                <th class="p-3 border">ID</th>
-                                <th class="p-3 border">Nombre</th>
-                                <th class="p-3 border text-center">Acciones</th>
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
+                    <h3 class="text-lg font-bold mb-4 text-gray-700">
+                        {{ editMode ? 'Editar Categoría' : 'Nueva Categoría' }}
+                    </h3>
+                    <form @submit.prevent="submit" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <input v-model="form.nombre" type="text" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <input v-model="form.descripcion" type="text" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500" />
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" :disabled="form.processing"
+                                :class="editMode ? 'bg-orange-600 hover:bg-orange-700' : 'bg-indigo-600 hover:bg-indigo-700'"
+                                class="text-white px-4 py-2 rounded-md font-bold w-full transition disabled:opacity-50 h-10 uppercase text-xs">
+                                {{ editMode ? 'Actualizar' : 'Crear' }}
+                            </button>
+                            <button v-if="editMode" @click="resetForm" type="button" class="bg-gray-500 text-white px-3 py-2 rounded-md h-10">X</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white shadow-sm overflow-hidden sm:rounded-lg border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nombre</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Descripción</th>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="cat in categorias" :key="cat.id" class="hover:bg-gray-50 transition">
-                                <td class="p-3 border text-center font-mono">{{ cat.id }}</td>
-                                <td class="p-3 border">{{ cat.nombre }}</td>
-                                <td class="p-3 border text-center">
-                                    <button @click="editCategoria(cat)" class="text-blue-600 hover:text-blue-900 mx-2 font-medium">Editar</button>
-                                    <button @click="deleteCategoria(cat.id)" class="text-red-600 hover:text-red-900 mx-2 font-medium">Eliminar</button>
+                                <td class="px-6 py-4 font-medium text-gray-900">{{ cat.nombre }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">{{ cat.descripcion || 'Sin descripción' }}</td>
+                                <td class="px-6 py-4 text-right text-sm font-medium">
+                                    <button @click="editCategoria(cat)" class="text-indigo-600 hover:text-indigo-900 font-bold mr-4">Editar</button>
+                                    <button @click="deleteCategoria(cat.id)" class="text-red-600 hover:text-red-900 font-bold">Eliminar</button>
                                 </td>
+                            </tr>
+                            <tr v-if="categorias.length === 0">
+                                <td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay categorías registradas.</td>
                             </tr>
                         </tbody>
                     </table>

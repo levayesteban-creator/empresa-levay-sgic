@@ -1,12 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps({
     productos: Array,
     categorias: Array,
-    proveedores: Array
+    proveedores: Array,
+    flash: Object
 });
 
 const editMode = ref(false);
@@ -14,18 +15,38 @@ const editId = ref(null);
 
 const form = useForm({
     nombre: '',
-    descripcion: '',
     precio: '',
-    stock: 0,
+    stock: '',
     id_categoria: '',
-    id_proveedor: ''
+    id_proveedor: '',
 });
 
 const submit = () => {
     if (editMode.value) {
-        form.put(route('productos.update', editId.value), { onSuccess: () => resetForm() });
+        // Spoofing para PUT
+        router.post(`/productos/${editId.value}`, {
+            _method: 'put',
+            nombre: form.nombre,
+            precio: form.precio,
+            stock: form.stock,
+            id_categoria: form.id_categoria,
+            id_proveedor: form.id_proveedor,
+        }, {
+            onSuccess: () => {
+                resetForm();
+                alert('¡Producto actualizado con éxito!');
+            },
+            onError: (err) => console.error(err),
+            preserveScroll: true
+        });
     } else {
-        form.post(route('productos.store'), { onSuccess: () => resetForm() });
+        form.post(route('productos.store'), {
+            onSuccess: () => {
+                resetForm();
+                alert('¡Producto registrado con éxito!');
+            },
+            onError: (err) => console.error(err)
+        });
     }
 };
 
@@ -33,116 +54,110 @@ const editProducto = (p) => {
     editMode.value = true;
     editId.value = p.id;
     form.nombre = p.nombre;
-    form.descripcion = p.descripcion;
     form.precio = p.precio;
     form.stock = p.stock;
     form.id_categoria = p.id_categoria;
     form.id_proveedor = p.id_proveedor;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// CORRECCIÓN DEFINITIVA: Spoofing de DELETE mediante POST
 const deleteProducto = (id) => {
-    if (confirm('¿Eliminar este producto de Empresa Levay?')) {
-        form.delete(route('productos.destroy', id));
+    if (!id) return;
+
+    if (confirm('¿Estás seguro de eliminar este producto?')) {
+        // Enviamos como POST pero le decimos a Laravel que lo trate como DELETE
+        router.post(`/productos/${id}`, {
+            _method: 'delete',
+        }, {
+            onSuccess: () => alert('Producto eliminado con éxito'),
+            onError: (err) => {
+                console.error("Error al eliminar:", err);
+                alert('No se pudo eliminar. Verifique la consola.');
+            },
+            preserveScroll: true
+        });
     }
 };
 
 const resetForm = () => {
     form.reset();
+    form.clearErrors();
     editMode.value = false;
     editId.value = null;
 };
 </script>
 
 <template>
-    <Head title="Inventario" />
+    <Head title="Gestión de Productos" />
+
     <AuthenticatedLayout>
-        <div class="py-12 max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-6 shadow-sm sm:rounded-lg border-t-4 border-blue-600">
-                <h2 class="text-2xl font-bold mb-6 text-gray-800">Inventario General - Empresa Levay</h2>
+        <template #header>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Inventario</h2>
+        </template>
 
-                <form @submit.prevent="submit" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 bg-gray-50 rounded-lg border">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium">Nombre del Producto</label>
-                        <input v-model="form.nombre" type="text" class="w-full border-gray-300 rounded-md shadow-sm" required />
-                        <div v-if="form.errors.nombre" class="text-red-500 text-xs mt-1 font-semibold">{{ form.errors.nombre }}</div>
-                    </div>
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                    <div>
-                        <label class="block text-sm font-medium">Precio ($)</label>
-                        <input v-model="form.precio" type="number" step="0.01" class="w-full border-gray-300 rounded-md shadow-sm" required />
-                        <div v-if="form.errors.precio" class="text-red-500 text-xs mt-1 font-semibold">{{ form.errors.precio }}</div>
-                    </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-8 border border-gray-200">
+                    <h3 class="text-lg font-bold mb-4 text-gray-700">
+                        {{ editMode ? 'Editar Producto' : 'Registrar Nuevo Producto' }}
+                    </h3>
+                    <form @submit.prevent="submit" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <input v-model="form.nombre" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Precio ($)</label>
+                            <input v-model="form.precio" type="number" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Stock</label>
+                            <input v-model="form.stock" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Categoría</label>
+                            <select v-model="form.id_categoria" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                                <option value="" disabled>Seleccionar...</option>
+                                <option v-for="cat in categorias" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Proveedor</label>
+                            <select v-model="form.id_proveedor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                                <option value="" disabled>Seleccionar...</option>
+                                <option v-for="prov in proveedores" :key="prov.id" :value="prov.id">{{ prov.nombre }}</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" :disabled="form.processing"
+                                :class="editMode ? 'bg-orange-600 hover:bg-orange-700' : 'bg-indigo-600 hover:bg-indigo-700'"
+                                class="text-white px-4 py-2 rounded-md font-bold w-full transition disabled:opacity-50 h-10 uppercase text-xs">
+                                {{ editMode ? 'Actualizar' : 'Añadir' }}
+                            </button>
+                            <button v-if="editMode" @click="resetForm" type="button" class="bg-gray-500 text-white px-3 py-2 rounded-md h-10">X</button>
+                        </div>
+                    </form>
+                </div>
 
-                    <div>
-                        <label class="block text-sm font-medium">Stock Inicial</label>
-                        <input v-model="form.stock" type="number" class="w-full border-gray-300 rounded-md shadow-sm" required />
-                        <div v-if="form.errors.stock" class="text-red-500 text-xs mt-1 font-semibold">{{ form.errors.stock }}</div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium">Categoría</label>
-                        <select v-model="form.id_categoria" class="w-full border-gray-300 rounded-md shadow-sm" required>
-                            <option value="" disabled>Seleccione...</option>
-                            <option v-for="c in categorias" :key="c.id" :value="c.id">{{ c.nombre }}</option>
-                        </select>
-                        <div v-if="form.errors.id_categoria" class="text-red-500 text-xs mt-1 font-semibold text-wrap">La categoría es obligatoria</div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium">Proveedor</label>
-                        <select v-model="form.id_proveedor" class="w-full border-gray-300 rounded-md shadow-sm" required>
-                            <option value="" disabled>Seleccione...</option>
-                            <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                        </select>
-                        <div v-if="form.errors.id_proveedor" class="text-red-500 text-xs mt-1 font-semibold">El proveedor es obligatorio</div>
-                    </div>
-
-                    <div class="md:col-span-3 flex gap-2 pt-2">
-                        <button type="submit" 
-                            :style="{ backgroundColor: editMode ? '#ea580c' : '#2563eb' }"
-                            class="text-white px-6 py-2 rounded-md hover:opacity-90 font-bold shadow-sm transition-all">
-                            {{ editMode ? 'Actualizar Producto' : 'Añadir al Inventario' }}
-                        </button>
-                        <button v-if="editMode" @click="resetForm" type="button" class="bg-gray-500 text-white px-6 py-2 rounded-md">
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
-
-                <div class="overflow-x-auto shadow-sm border rounded-lg">
-                    <table class="w-full border-collapse">
-                        <thead class="bg-gray-800 text-white">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th class="p-3 text-left">Producto</th>
-                                <th class="p-3 text-left">Categoría</th>
-                                <th class="p-3 text-left">Proveedor</th>
-                                <th class="p-3 text-right">Precio</th>
-                                <th class="p-3 text-center">Stock</th>
-                                <th class="p-3 text-center">Acciones</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Producto</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Precio/Stock</th>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr v-for="prod in productos" :key="prod.id" class="border-b hover:bg-gray-50 transition-colors">
-                                <td class="p-3 font-bold text-blue-700">{{ prod.nombre }}</td>
-                                <td class="p-3">
-                                    <span class="bg-gray-200 px-2 py-1 rounded text-xs font-medium text-gray-700">
-                                        {{ prod.categoria?.nombre || 'N/A' }}
-                                    </span>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="producto in productos" :key="producto.id" class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 font-medium text-gray-900">{{ producto.nombre }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">${{ producto.precio }} | {{ producto.stock }} uds</td>
+                                <td class="px-6 py-4 text-right text-sm font-medium">
+                                    <button @click="editProducto(producto)" class="text-indigo-600 hover:text-indigo-900 font-bold mr-4">Editar</button>
+                                    <button @click="deleteProducto(producto.id)" class="text-red-600 hover:text-red-900 font-bold">Eliminar</button>
                                 </td>
-                                <td class="p-3 text-sm text-gray-600">{{ prod.proveedor?.nombre || 'N/A' }}</td>
-                                <td class="p-3 text-right font-mono">${{ Number(prod.precio).toFixed(2) }}</td>
-                                <td class="p-3 text-center">
-                                    <span :class="prod.stock < 5 ? 'bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold' : 'text-green-600'">
-                                        {{ prod.stock }}
-                                    </span>
-                                </td>
-                                <td class="p-3 text-center">
-                                    <button @click="editProducto(prod)" class="text-blue-600 hover:text-blue-800 font-medium mx-1">Editar</button>
-                                    <button @click="deleteProducto(prod.id)" class="text-red-600 hover:text-red-800 font-medium mx-1">Eliminar</button>
-                                </td>
-                            </tr>
-                            <tr v-if="productos.length === 0">
-                                <td colspan="6" class="p-8 text-center text-gray-500 italic">No hay productos en el inventario.</td>
                             </tr>
                         </tbody>
                     </table>

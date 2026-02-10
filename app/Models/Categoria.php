@@ -9,6 +9,14 @@ class Categoria extends Model
 {
     use HasFactory;
 
-    // Esto permite que el CRUD funcione sin errores de "Mass Assignment"
-    protected $fillable = ['nombre'];
+    // Campos que se pueden llenar masivamente
+    protected $fillable = [
+        'nombre',
+        'descripcion'
+    ];
+
+    public function productos()
+    {
+        return $this->hasMany(Producto::class, 'id_categoria');
+    }
 }

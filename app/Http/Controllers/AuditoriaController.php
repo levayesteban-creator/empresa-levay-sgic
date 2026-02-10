@@ -9,8 +9,11 @@ class AuditoriaController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Auditorias/Index', [
-            'logs' => Auditoria::latest()->paginate(20)
+
+        $auditorias = Auditoria::latest()->get();
+
+        return Inertia::render('Auditoria/Index', [
+            'auditorias' => $auditorias
         ]);
     }
 }

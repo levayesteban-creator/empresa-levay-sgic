@@ -18,10 +18,12 @@ return new class extends Migration
             $table->decimal('precio', 10, 2);
             $table->integer('stock')->default(0);
 
-            // Llaves Foráneas (Relaciones)
-            // Vinculamos con la tabla 'categorias' y 'proveedors'
+            // CORRECCIÓN DE NOMBRES DE COLUMNAS Y TABLAS REFERENCIADAS
+            // Cambiamos categoria_id por id_categoria
             $table->foreignId('id_categoria')->constrained('categorias')->onDelete('cascade');
-            $table->foreignId('id_proveedor')->constrained('proveedors')->onDelete('cascade');
+
+            // Cambiamos proveedor_id por id_proveedor y apuntamos a 'proveedores'
+            $table->foreignId('id_proveedor')->constrained('proveedores')->onDelete('cascade');
 
             $table->timestamps();
         });

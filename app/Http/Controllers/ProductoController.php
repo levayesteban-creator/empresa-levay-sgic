@@ -5,89 +5,68 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Proveedor;
-use App\Models\Auditoria; // Importamos el modelo de Auditoría
+use App\Models\Auditoria;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ProductoController extends Controller
 {
-    /**
-     * Mostrar la lista de productos
-     */
     public function index()
     {
-        $productos = Producto::with(['categoria', 'proveedor'])->get();
         return Inertia::render('Productos/Index', [
-            'productos' => $productos
+            // Cargamos las relaciones para ver nombres de categoría y proveedor en la tabla
+            'productos' => Producto::with(['categoria', 'proveedor'])->orderBy('id', 'desc')->get(),
+            'categorias' => Categoria::all(),
+            'proveedores' => Proveedor::all()
         ]);
     }
 
-    /**
-     * Guardar un nuevo producto
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric',
-            'stock' => 'required|integer',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
             'id_categoria' => 'required|exists:categorias,id',
+            // CORREGIDO: Se cambió 'proveedors' por 'proveedores'
             'id_proveedor' => 'required|exists:proveedores,id',
         ]);
 
-        Producto::create($validated);
+        $producto = Producto::create($validated);
 
-        // --- REGISTRO DE AUDITORÍA ---
-        Auditoria::registrar(
-            'Creación',
-            'Productos',
-            'Se añadió el producto: ' . $request->nombre . ' con un stock inicial de ' . $request->stock
-        );
+        Auditoria::registrar('Creación', 'Productos', 'Se registró el producto: ' . $producto->nombre);
 
-        return redirect()->route('productos.index')->with('message', 'Producto creado con éxito');
+        return redirect()->route('productos.index')->with('success', 'Producto creado.');
     }
 
-    /**
-     * Actualizar un producto existente
-     */
-    public function update(Request $request, Producto $producto)
+    public function update(Request $request, $id)
     {
+        $producto = Producto::findOrFail($id);
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric',
-            'stock' => 'required|integer',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
             'id_categoria' => 'required|exists:categorias,id',
+            // CORREGIDO: Se cambió 'proveedors' por 'proveedores'
             'id_proveedor' => 'required|exists:proveedores,id',
         ]);
 
         $producto->update($validated);
 
-        // --- REGISTRO DE AUDITORÍA ---
-        Auditoria::registrar(
-            'Edición',
-            'Productos',
-            'Se actualizó la información de: ' . $producto->nombre
-        );
+        Auditoria::registrar('Edición', 'Productos', 'Se actualizó el producto: ' . $producto->nombre);
 
-        return redirect()->route('productos.index')->with('message', 'Producto actualizado');
+        return redirect()->route('productos.index')->with('success', 'Producto actualizado.');
     }
 
-    /**
-     * Eliminar un producto
-     */
-    public function destroy(Producto $producto)
+    public function destroy($id)
     {
-        $nombreEliminado = $producto->nombre; // Guardamos el nombre antes de borrar
-
+        $producto = Producto::findOrFail($id);
+        $nombre = $producto->nombre;
         $producto->delete();
 
-        // --- REGISTRO DE AUDITORÍA ---
-        Auditoria::registrar(
-            'Eliminación',
-            'Productos',
-            'Se eliminó permanentemente el producto: ' . $nombreEliminado
-        );
+        Auditoria::registrar('Eliminación', 'Productos', 'Se eliminó el producto: ' . $nombre);
 
-        return redirect()->route('productos.index')->with('message', 'Producto eliminado');
+        return redirect()->route('productos.index')->with('success', 'Producto eliminado.');
     }
 }

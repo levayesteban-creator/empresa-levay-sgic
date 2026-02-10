@@ -15,14 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Usuario Admin (Nueva Identidad del Sistema)
+        // 1. Usuario Admin con ROL (Corregido para Auditoría)
         User::factory()->create([
             'name' => 'Gerente Levay',
             'email' => 'admin@levay.com',
             'password' => bcrypt('admin123'),
+            'role' => 'admin', // Esto es lo que pide el middleware
         ]);
 
-        // 2. Crear Categorías para el rubro Industrial
+        // 2. Crear Categorías
         $c1 = Categoria::create(['nombre' => 'Materia Prima']);
         $c2 = Categoria::create(['nombre' => 'Producto Terminado']);
         $c3 = Categoria::create(['nombre' => 'Repuestos']);
@@ -37,29 +38,29 @@ class DatabaseSeeder extends Seeder
             'email' => 'contacto@industrial.ca'
         ]);
 
-        // 4. Crear Productos (Variados para demostrar el funcionamiento)
+        // 4. Crear Productos
         Producto::create([
             'nombre' => 'Cojinete de Acero',
             'precio' => 15.50,
             'stock' => 50,
-            'id_categoria' => $c3->id,
-            'id_proveedor' => $p2->id
+            'categoria_id' => $c3->id,
+            'proveedor_id' => $p2->id
         ]);
 
         Producto::create([
             'nombre' => 'Panel de Control V2',
             'precio' => 450.00,
             'stock' => 3,
-            'id_categoria' => $c2->id,
-            'id_proveedor' => $p1->id
+            'categoria_id' => $c2->id,
+            'proveedor_id' => $p1->id
         ]);
 
         Producto::create([
             'nombre' => 'Lubricante Industrial',
             'precio' => 85.00,
             'stock' => 12,
-            'id_categoria' => $c1->id,
-            'id_proveedor' => $p2->id
+            'categoria_id' => $c1->id,
+            'proveedor_id' => $p2->id
         ]);
     }
 }

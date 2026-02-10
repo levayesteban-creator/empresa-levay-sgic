@@ -8,12 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('proveedors', function (Blueprint $table) {
+        // Cambiamos el nombre a 'proveedores' (plural en español)
+        Schema::create('proveedores', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
             $table->string('contacto_persona')->nullable();
             $table->string('telefono')->nullable();
-            $table->string('email')->nullable();
+            $table->string('email')->unique(); // Unique evita correos duplicados
             $table->text('direccion')->nullable();
             $table->timestamps();
         });
@@ -21,6 +22,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('proveedors');
+        Schema::dropIfExists('proveedores');
     }
 };

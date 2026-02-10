@@ -5,15 +5,16 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MovimientoController;
-use App\Http\Controllers\AuditoriaController; // Importado
-use App\Models\Producto;   // Importado para el Dashboard
-use App\Models\Proveedor;  // Importado para el Dashboard
-use App\Models\Movimiento; // Importado para el Dashboard
+use App\Http\Controllers\AuditoriaController;
+use App\Models\Producto;
+use App\Models\Proveedor;
+use App\Models\Movimiento;
+use App\Models\Categoria;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Ruta de Bienvenida
+// Ruta de bienvenida
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -23,7 +24,7 @@ Route::get('/', function () {
     ]);
 });
 
-// Ruta del Dashboard con Estadísticas
+// Dashboard con estadísticas
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
         'stats' => [
@@ -35,18 +36,39 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// --- Rutas de Gestión de Inventario (Recursos) ---
+// Rutas protegidas del sistema
 Route::middleware(['auth', 'verified'])->group(function () {
+
     Route::resource('categorias', CategoriaController::class);
-    Route::resource('proveedores', ProveedorController::class);
+
+    // Corregimos el recurso de proveedores para que use el parámetro singular 'proveedor'
+    Route::resource('proveedores', ProveedorController::class)->parameters([
+        'proveedores' => 'proveedor'
+    ]);
+
     Route::resource('productos', ProductoController::class);
+
     Route::resource('movimientos', MovimientoController::class);
 
-    // Ruta de Auditoría dentro del grupo autenticado
+    // Módulo de Reportes
+    Route::get('/reportes', function () {
+        $productos = Producto::all();
+        $categorias = Categoria::withCount('productos')->get();
+        // Aseguramos que el cálculo trate los valores como números
+        $valorTotalUsd = $productos->sum(fn($p) => (float)$p->precio * (int)$p->stock);
+
+        return Inertia::render('Reportes/Index', [
+            'valorTotalUsd' => (float)$valorTotalUsd,
+            'conteoCategorias' => $categorias,
+            'productos' => $productos
+        ]);
+    })->name('reportes.index');
+
+    // Módulo de Auditoría
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
 });
 
-// Rutas de Perfil de Usuario
+// Perfil de usuario
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

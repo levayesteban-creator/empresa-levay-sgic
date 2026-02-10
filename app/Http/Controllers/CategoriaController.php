@@ -12,40 +12,53 @@ class CategoriaController extends Controller
     public function index()
     {
         return Inertia::render('Categorias/Index', [
-            'categorias' => Categoria::all()
+            'categorias' => Categoria::orderBy('id', 'desc')->get()
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate(['nombre' => 'required|string|max:100']);
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:100',
+            'descripcion' => 'nullable|string|max:255'
+        ]);
+
         Categoria::create($validated);
 
-        // Registro de Auditoría
         Auditoria::registrar('Creación', 'Categorías', 'Se creó la categoría: ' . $request->nombre);
 
-        return redirect()->route('categorias.index');
+        return redirect()->route('categorias.index')->with('success', 'Categoría creada.');
     }
 
-    public function update(Request $request, Categoria $categoria)
+    public function update(Request $request, $id)
     {
-        $validated = $request->validate(['nombre' => 'required|string|max:100']);
+        $categoria = Categoria::findOrFail($id);
+
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:100',
+            'descripcion' => 'nullable|string|max:255'
+        ]);
+
         $categoria->update($validated);
 
-        // Registro de Auditoría
-        Auditoria::registrar('Edición', 'Categorías', 'Se cambió el nombre de la categoría a: ' . $categoria->nombre);
+        // Auditoría detallada
+        Auditoria::registrar(
+            'Edición',
+            'Categorías',
+            "Actualizada ID {$id}: {$categoria->nombre} | Desc: " . ($categoria->descripcion ?? 'N/A')
+        );
 
-        return redirect()->route('categorias.index');
+        return redirect()->route('categorias.index')->with('success', 'Categoría actualizada.');
     }
 
-    public function destroy(Categoria $categoria)
+    public function destroy($id)
     {
+        $categoria = Categoria::findOrFail($id);
         $nombre = $categoria->nombre;
         $categoria->delete();
 
-        // Registro de Auditoría
         Auditoria::registrar('Eliminación', 'Categorías', 'Se eliminó la categoría: ' . $nombre);
 
-        return redirect()->route('categorias.index');
+        return redirect()->route('categorias.index')->with('success', 'Categoría eliminada.');
     }
 }

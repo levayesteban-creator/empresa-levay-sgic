@@ -6,21 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::create('categorias', function (Blueprint $table) {
-        $table->id();
-        $table->string('nombre');
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('categorias', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre', 100);
+            // ESTA ES LA COLUMNA QUE FALTA:
+            $table->string('descripcion', 255)->nullable();
+            $table->timestamps();
+        });
+    }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('categorias');
