@@ -1,4 +1,8 @@
-# Sistema de Gestión Empresa Levay
+<p align="center">
+  <img src="Imagen DEL READ ME" alt="Empresa Levay" width="100%">
+</p>
+
+# Sistema Empresa Levay
 
 Sistema integral para el control de inventarios, proveedores y auditoría.
 
