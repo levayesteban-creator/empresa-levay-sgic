@@ -1,21 +1,18 @@
-<p align="center">
-  <img src="public/img/logo-empresa.png" width="500" alt="Logo Empresa Levay">
-</p>
+# Sistema de Gestión Empresa Levay
 
-# 📦 Sistema de Gestión de Inventario - Empresa Levay
+Sistema integral para el control de inventarios, proveedores y auditoría.
 
-# 📦 Empresa Levay - Sistema de Gestión de Inventarios
+## 🛠️ Tecnologías utilizadas
+- **Backend:** Laravel 10+
+- **Frontend:** Vue.js 3 (Composition API)
+- **Comunicación:** Inertia.js
+- **Estilos:** Tailwind CSS
+- **Base de Datos:** MySQL
 
-Sistema integral desarrollado para la materia de **Programación IV**. Utiliza una arquitectura moderna de **Single Page Application (SPA)**.
-
-## 🛠️ Stack Tecnológico
-* **Backend:** Laravel 11 (PHP)
-* **Frontend:** Vue.js 3 + Inertia.js (Reactividad total sin recarga de página)
-* **Estilos:** Tailwind CSS
-* **Herramientas:** Vite, Axios, Laragon.
-
-## 🚀 Características Principales
-* **CRUD Completo:** Gestión de Productos, Categorías y Proveedores.
-* **Control de Stock:** Sistema automatizado de entradas y salidas.
-* **Seguridad:** Validación de datos y protección de integridad referencial.
-* **Auditoría:** Registro histórico de movimientos de inventario.
+## 🚀 Instalación para evaluación
+1. Clonar el repositorio.
+2. Ejecutar `composer install`.
+3. Ejecutar `npm install && npm run build`.
+4. Configurar el archivo `.env` con las credenciales de base de datos.
+5. Ejecutar `php artisan migrate`.
+6. Iniciar con `php artisan serve`.
