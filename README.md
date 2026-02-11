@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Imagen DEL READ ME" alt="Empresa Levay" width="100%">
+  <img src="Imagen DEL READ ME.png" alt="Empresa Levay" width="100%">
 </p>
 
 # Sistema Empresa Levay
